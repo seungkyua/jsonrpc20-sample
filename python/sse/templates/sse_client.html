@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>SSE Example</title>
+</head>
+<body>
+    <h1>Server-Sent Events Example</h1>
+    <div id="output"></div>
+
+    <script>
+        // EventSource 객체를 생성하고 서버의 스트림 경로를 지정합니다.
+        const eventSource = new EventSource('http://localhost:5000/stream');
+
+        // 'message' 이벤트를 수신할 리스너를 등록합니다.
+        // 서버에서 'data: ' 접두사를 가진 메시지를 보낼 때마다 이 함수가 실행됩니다.
+        eventSource.onmessage = function(event) {
+            const data = JSON.parse(event.data);
+            const outputDiv = document.getElementById('output');
+
+            // 받은 데이터를 화면에 표시합니다.
+            outputDiv.innerHTML += `<p>현재 시간: ${data.time}</p>`;
+        };
+
+        // 연결이 끊어졌을 때의 이벤트를 처리합니다.
+        eventSource.onerror = function(error) {
+            console.error('EventSource failed:', error);
+            eventSource.close();
+        };
+    </script>
+</body>
+</html>
