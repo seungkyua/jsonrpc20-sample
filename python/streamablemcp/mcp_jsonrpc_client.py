@@ -186,30 +186,45 @@ async def demo():
         
         # 서버 이벤트 수신 테스트
         print("\n📡 서버 이벤트 수신 테스트:")
-        print("   🎧 서버 알림 수신 중... (5초)")
+        print("   🎧 서버 알림 수신 중... (Enter 키를 누르면 종료)")
         
+        # 사용자 입력을 비동기적으로 처리하기 위한 이벤트 루프
+        loop = asyncio.get_event_loop()
+        
+        async def wait_for_enter():
+            """Enter 키 입력 대기"""
+            await loop.run_in_executor(None, input)
+            return True
+        
+        async def listen_events():
+            """서버 이벤트 수신"""
+            try:
+                async for event in client.listen_server_events():
+                    if "method" in event and event["method"] == "server_notification":
+                        message = event["params"]["message"]
+                        print(f"      📢 서버: {message}")
+            except Exception as e:
+                print(f"      ❌ 이벤트 수신 오류: {e}")
+        
+        # Enter 키 입력과 이벤트 수신을 동시에 처리
         try:
-            # Python 3.11 이전 버전 호환성을 위한 timeout 처리
-            if hasattr(asyncio, 'timeout'):
-                async with asyncio.timeout(5):
-                    async for event in client.listen_server_events():
-                        if "method" in event and event["method"] == "server_notification":
-                            message = event["params"]["message"]
-                            print(f"      📢 서버: {message}")
-            else:
-                # Python 3.11 이전 버전용
-                async def timeout_wrapper():
-                    try:
-                        async for event in client.listen_server_events():
-                            if "method" in event and event["method"] == "server_notification":
-                                message = event["params"]["message"]
-                                print(f"      📢 서버: {message}")
-                    except asyncio.TimeoutError:
-                        pass
-                
-                await asyncio.wait_for(timeout_wrapper(), timeout=5)
-        except asyncio.TimeoutError:
-            print("      ⏰ 시간 초과")
+            # Python 3.8+ 호환성을 위해 ensure_future 사용
+            enter_task = asyncio.ensure_future(wait_for_enter())
+            events_task = asyncio.ensure_future(listen_events())
+            
+            # 두 태스크 중 하나가 완료될 때까지 대기
+            done, pending = await asyncio.wait(
+                [enter_task, events_task],
+                return_when=asyncio.FIRST_COMPLETED
+            )
+            
+            # 완료되지 않은 태스크 취소
+            for task in pending:
+                task.cancel()
+            
+            print("      ✅ 사용자가 Enter를 눌러 종료했습니다.")
+        except Exception as e:
+            print(f"      ❌ 오류: {e}")
         
         print("\n🎉 모든 테스트 완료!")
 
