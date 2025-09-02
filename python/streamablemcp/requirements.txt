@@ -1,0 +1,15 @@
+# MCP Streamable HTTP with JSON-RPC 2.0 Dependencies
+
+# FastAPI 서버용
+fastapi==0.104.1
+uvicorn[standard]==0.24.0
+
+# Flask 웹 클라이언트용
+flask==3.0.0
+
+# HTTP 클라이언트용
+aiohttp==3.9.1
+requests==2.31.0
+
+# 기타 유틸리티
+python-multipart==0.0.6
